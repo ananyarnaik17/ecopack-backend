@@ -48,8 +48,6 @@ router.post('/login', async (req, res) => {
 
 module.exports = router;
  */
-// backend/routes/auth.js
-
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
@@ -58,6 +56,8 @@ const User = require('../models/User');
 // @desc    Login Supply Chain User
 // @access  Public
 router.post('/login', async (req, res) => {
+    console.log("🔍 Incoming login request body:", req.body); // ✅ Debug log
+
     const { employeeId, password } = req.body;
 
     // Basic validation
@@ -66,19 +66,21 @@ router.post('/login', async (req, res) => {
     }
 
     try {
-        // Find user with matching employeeId and role
-        const user = await User.findOne({ employeeId, role: 'supply_chain' });
+        // Find user with employeeId and role = supply_chain
+        const user = await User.findOne({ employeeId: employeeId, role: 'supply_chain' });
 
         if (!user) {
+            console.log("❌ No user found with employeeId and role supply_chain");
             return res.status(404).json({ error: 'User not found or not authorized' });
         }
 
-        // Check password (in plaintext for now — not secure in production)
+        // Password check (plain text - use hashing in real projects)
         if (user.password !== password) {
+            console.log("❌ Password mismatch");
             return res.status(401).json({ error: 'Invalid password' });
         }
 
-        // Success — return user data
+        // ✅ Success
         return res.status(200).json({
             message: 'Login successful',
             user: {
@@ -91,12 +93,12 @@ router.post('/login', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Login error:', error.message);
+        console.error('❌ Login error:', error.message);
         return res.status(500).json({ error: 'Server error' });
     }
 });
 
-// ✅ TEMP: Test route to list all users from DB
+// ✅ TEMP: Route to view all users (for debugging only — remove later)
 router.get('/test-users', async (req, res) => {
     try {
         const users = await User.find();
