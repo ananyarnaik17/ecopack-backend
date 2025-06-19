@@ -1,30 +1,40 @@
+// backend/routes/auth.js
+
 const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 
+// Login Route
 router.post('/login', async (req, res) => {
     const { employeeId, password } = req.body;
 
     try {
         const user = await User.findOne({ employeeId, role: 'supply_chain' });
 
-        if (!user) return res.status(404).json({ message: 'User not found or not authorized' });
-        if (user.password !== password) return res.status(401).json({ message: 'Invalid password' });
+        if (!user) {
+            return res.status(404).json({ error: 'User not found or not authorized' });
+        }
 
-        req.session.user = { id: user._id, employeeId: user.employeeId, role: user.role };
-        return res.status(200).json({ message: 'Login successful', user: req.session.user });
+        if (user.password !== password) {
+            return res.status(401).json({ error: 'Invalid password' });
+        }
+
+        // Return minimal user info (you can add JWT later if needed)
+        return res.status(200).json({
+            message: 'Login successful',
+            user: {
+                id: user._id,
+                name: user.name,
+                employeeId: user.employeeId,
+                email: user.email,
+                role: user.role
+            }
+        });
+
     } catch (error) {
-        return res.status(500).json({ message: 'Server error' });
+        console.error('Login error:', error);
+        return res.status(500).json({ error: 'Server error' });
     }
 });
 
-
-router.post('/logout', (req, res) => {
-    req.session.destroy();
-    res.status(200).json({ message: 'Logged out successfully' });
-});
-
 module.exports = router;
-
-
-

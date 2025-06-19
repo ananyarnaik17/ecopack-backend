@@ -4,6 +4,7 @@ const cors = require('cors');
 require('dotenv').config();
 
 const recommendationRoutes = require('./routes/recommendationRoutes');
+const authRoutes = require('./routes/auth'); // ✅ NEW: Import auth routes
 
 const app = express();
 app.use(cors());
@@ -28,41 +29,9 @@ mongoose.connect(process.env.MONGO_URI)
 
 // ======= Routes =======
 app.use('/api/recommendations', recommendationRoutes);
+app.use('/api', authRoutes); // ✅ Use /api/login from auth.js
 
-// ======= User Schema =======
-const userSchema = new mongoose.Schema({
-    name: String,
-    email: String,
-    password: String,
-    role: String,
-    employeeId: String
-});
-
-const User = mongoose.model('User', userSchema);
-
-// ======= Supply Chain Login Route =======
-app.post('/api/supply-chain-login', async (req, res) => {
-    try {
-        const { employeeId, password } = req.body;
-
-        if (!employeeId || !password) {
-            return res.status(400).json({ error: 'Employee ID and password are required' });
-        }
-
-        const user = await User.findOne({ employeeId, password, role: 'supply_chain' });
-
-        if (!user) {
-            return res.status(401).json({ error: 'Invalid credentials or unauthorized access' });
-        }
-
-        res.status(200).json({ message: 'Login successful', user });
-    } catch (err) {
-        console.error('Login error:', err);
-        res.status(500).json({ error: 'Server error' });
-    }
-});
-
-// ======= Feedback Schema =======
+// ======= Feedback Schema & Routes =======
 const feedbackSchema = new mongoose.Schema({
     name: { type: String, required: true },
     overallRating: { type: Number, required: true },
@@ -75,7 +44,6 @@ const feedbackSchema = new mongoose.Schema({
 
 const Feedback = mongoose.model('Feedback', feedbackSchema);
 
-// ======= Submit Feedback =======
 app.post('/api/submit-feedback', async (req, res) => {
     try {
         const { name, overallRating, accuracyRating, packagingRating, deliveryRating, suggestions } = req.body;
@@ -101,7 +69,6 @@ app.post('/api/submit-feedback', async (req, res) => {
     }
 });
 
-// ======= Get All Feedbacks =======
 app.get('/api/get-feedbacks', async (req, res) => {
     try {
         const feedbacks = await Feedback.find().sort({ createdAt: -1 });
@@ -112,7 +79,7 @@ app.get('/api/get-feedbacks', async (req, res) => {
     }
 });
 
-// ======= Shipping Cost Calculation =======
+// ======= Shipping Cost API =======
 app.post('/api/get-shipping-cost', (req, res) => {
     const { weight, shippingMethod } = req.body;
 
