@@ -13,15 +13,15 @@ app.use(express.json());
 const PORT = process.env.PORT || 5000;
 
 // ================= MongoDB Connection ==================
-mongoose.connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-})
+mongoose.connect(process.env.MONGO_URI)
     .then(() => {
-        console.log('MongoDB connected successfully');
-        app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+        console.log('✅ MongoDB connected successfully');
+        // Start server after DB connects
+        app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
     })
-    .catch(err => console.error('MongoDB connection error:', err));
+    .catch(err => {
+        console.error('❌ MongoDB connection error:', err);
+    });
 
 // ================= Routes ==================
 app.use('/api/recommendations', recommendationRoutes);
@@ -31,7 +31,8 @@ const userSchema = new mongoose.Schema({
     name: String,
     email: String,
     password: String,
-    role: String
+    role: String,
+    employeeId: String // <-- Added this since you're querying by employeeId
 });
 
 const User = mongoose.model('User', userSchema);
@@ -58,9 +59,7 @@ app.post('/api/supply-chain-login', async (req, res) => {
     }
 });
 
-
 // ================= Feedback Schema and APIs ==================
-// Updated Feedback Schema for Supply Chain
 const feedbackSchema = new mongoose.Schema({
     name: { type: String, required: true },
     overallRating: { type: Number, required: true },
@@ -76,8 +75,6 @@ const Feedback = mongoose.model('Feedback', feedbackSchema);
 // Submit Feedback
 app.post('/api/submit-feedback', async (req, res) => {
     try {
-        console.log('Received feedback:', req.body);
-
         const { name, overallRating, accuracyRating, packagingRating, deliveryRating, suggestions } = req.body;
 
         if (!name || !overallRating || !accuracyRating || !packagingRating || !deliveryRating) {
@@ -105,7 +102,7 @@ app.post('/api/submit-feedback', async (req, res) => {
 // Get All Feedbacks
 app.get('/api/get-feedbacks', async (req, res) => {
     try {
-        const feedbacks = await Feedback.find().sort({ createdAt: -1 }); // Latest first
+        const feedbacks = await Feedback.find().sort({ createdAt: -1 });
         res.json(feedbacks);
     } catch (err) {
         console.error('Error fetching feedbacks:', err);
