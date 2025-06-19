@@ -1,4 +1,3 @@
-// server.js
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -12,32 +11,36 @@ app.use(express.json());
 
 const PORT = process.env.PORT || 5000;
 
-// ================= MongoDB Connection ==================
+// ======= Root route to confirm server is running =======
+app.get('/', (req, res) => {
+    res.send('🚀 Backend API is running on Render!');
+});
+
+// ======= MongoDB Connection =======
 mongoose.connect(process.env.MONGO_URI)
     .then(() => {
         console.log('✅ MongoDB connected successfully');
-        // Start server after DB connects
         app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
     })
     .catch(err => {
         console.error('❌ MongoDB connection error:', err);
     });
 
-// ================= Routes ==================
+// ======= Routes =======
 app.use('/api/recommendations', recommendationRoutes);
 
-// ================= User Schema ==================
+// ======= User Schema =======
 const userSchema = new mongoose.Schema({
     name: String,
     email: String,
     password: String,
     role: String,
-    employeeId: String // <-- Added this since you're querying by employeeId
+    employeeId: String
 });
 
 const User = mongoose.model('User', userSchema);
 
-// ================= Supply Chain Login Route ==================
+// ======= Supply Chain Login Route =======
 app.post('/api/supply-chain-login', async (req, res) => {
     try {
         const { employeeId, password } = req.body;
@@ -59,7 +62,7 @@ app.post('/api/supply-chain-login', async (req, res) => {
     }
 });
 
-// ================= Feedback Schema and APIs ==================
+// ======= Feedback Schema =======
 const feedbackSchema = new mongoose.Schema({
     name: { type: String, required: true },
     overallRating: { type: Number, required: true },
@@ -72,7 +75,7 @@ const feedbackSchema = new mongoose.Schema({
 
 const Feedback = mongoose.model('Feedback', feedbackSchema);
 
-// Submit Feedback
+// ======= Submit Feedback =======
 app.post('/api/submit-feedback', async (req, res) => {
     try {
         const { name, overallRating, accuracyRating, packagingRating, deliveryRating, suggestions } = req.body;
@@ -91,7 +94,6 @@ app.post('/api/submit-feedback', async (req, res) => {
         });
 
         await newFeedback.save();
-
         res.status(201).json({ message: 'Feedback submitted successfully' });
     } catch (err) {
         console.error('Error saving feedback:', err);
@@ -99,7 +101,7 @@ app.post('/api/submit-feedback', async (req, res) => {
     }
 });
 
-// Get All Feedbacks
+// ======= Get All Feedbacks =======
 app.get('/api/get-feedbacks', async (req, res) => {
     try {
         const feedbacks = await Feedback.find().sort({ createdAt: -1 });
@@ -110,7 +112,7 @@ app.get('/api/get-feedbacks', async (req, res) => {
     }
 });
 
-// ================= Shipping Cost Calculation API ==================
+// ======= Shipping Cost Calculation =======
 app.post('/api/get-shipping-cost', (req, res) => {
     const { weight, shippingMethod } = req.body;
 
