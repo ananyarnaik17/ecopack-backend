@@ -1,0 +1,4 @@
+name,email,password,role
+Alice Smith,alice@walmart.com,password123,supply_chain
+Bob Johnson,bob@walmart.com,password456,supply_chain
+Charlie Lee,charlie@walmart.com,password789,supply_chain
