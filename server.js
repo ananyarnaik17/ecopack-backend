@@ -3,21 +3,18 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
 
-const recommendationRoutes = require('./routes/recommendationRoutes');
-const authRoutes = require('./routes/auth'); // ✅ NEW: Import auth routes
-
 const app = express();
-app.use(cors());
-app.use(express.json());
-
 const PORT = process.env.PORT || 5000;
 
-// ======= Root route to confirm server is running =======
-app.get('/', (req, res) => {
-    res.send('🚀 Backend API is running on Render!');
-});
+// ======= Middleware =======
+app.use(cors());
+app.use(express.json()); // ✅ Required to parse JSON bodies
 
-// ======= MongoDB Connection =======
+// ======= Import Routes =======
+const recommendationRoutes = require('./routes/recommendationRoutes');
+const authRoutes = require('./routes/auth'); // ✅ Your login/logout routes
+
+// ======= Connect MongoDB =======
 mongoose.connect(process.env.MONGO_URI)
     .then(() => {
         console.log('✅ MongoDB connected successfully');
@@ -27,9 +24,14 @@ mongoose.connect(process.env.MONGO_URI)
         console.error('❌ MongoDB connection error:', err);
     });
 
-// ======= Routes =======
+// ======= Root Route =======
+app.get('/', (req, res) => {
+    res.send('🚀 Backend API is running on Render!');
+});
+
+// ======= Route Use =======
+app.use('/api', authRoutes); // ✅ /api/login, /api/logout
 app.use('/api/recommendations', recommendationRoutes);
-app.use('/api', authRoutes); // ✅ Use /api/login from auth.js
 
 // ======= Feedback Schema & Routes =======
 const feedbackSchema = new mongoose.Schema({
@@ -44,6 +46,7 @@ const feedbackSchema = new mongoose.Schema({
 
 const Feedback = mongoose.model('Feedback', feedbackSchema);
 
+// Submit Feedback
 app.post('/api/submit-feedback', async (req, res) => {
     try {
         const { name, overallRating, accuracyRating, packagingRating, deliveryRating, suggestions } = req.body;
@@ -69,6 +72,7 @@ app.post('/api/submit-feedback', async (req, res) => {
     }
 });
 
+// Get All Feedbacks
 app.get('/api/get-feedbacks', async (req, res) => {
     try {
         const feedbacks = await Feedback.find().sort({ createdAt: -1 });
@@ -79,7 +83,7 @@ app.get('/api/get-feedbacks', async (req, res) => {
     }
 });
 
-// ======= Shipping Cost API =======
+// ======= Shipping Cost Calculation =======
 app.post('/api/get-shipping-cost', (req, res) => {
     const { weight, shippingMethod } = req.body;
 

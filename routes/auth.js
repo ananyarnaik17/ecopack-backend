@@ -4,22 +4,31 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 
-// Login Route
+// @route   POST /api/login
+// @desc    Login Supply Chain User
+// @access  Public
 router.post('/login', async (req, res) => {
     const { employeeId, password } = req.body;
 
+    // Basic validation
+    if (!employeeId || !password) {
+        return res.status(400).json({ error: 'Employee ID and password are required' });
+    }
+
     try {
+        // Find user with matching employeeId and role
         const user = await User.findOne({ employeeId, role: 'supply_chain' });
 
         if (!user) {
             return res.status(404).json({ error: 'User not found or not authorized' });
         }
 
+        // Password check (plaintext comparison — consider hashing for production)
         if (user.password !== password) {
             return res.status(401).json({ error: 'Invalid password' });
         }
 
-        // Return minimal user info (you can add JWT later if needed)
+        // Success — return user data
         return res.status(200).json({
             message: 'Login successful',
             user: {
@@ -32,7 +41,7 @@ router.post('/login', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('Login error:', error);
+        console.error('Login error:', error.message);
         return res.status(500).json({ error: 'Server error' });
     }
 });
